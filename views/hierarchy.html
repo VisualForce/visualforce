@@ -1,8 +1,8 @@
 <html>
   <head>
     <title>Dendrogram Layout</title>
-    <link type="text/css" rel="stylesheet" href="../ex.css"/>
-    <script type="text/javascript" src="../../protovis.js"></script>
+    <link type="text/css" rel="stylesheet" href="ex.css"/>
+    <script type="text/javascript" src="protovis.js"></script>
     <script type="text/javascript" src="flare.js"></script>
     <style type="text/css">
 
@@ -37,8 +37,8 @@ layout.link.add(pv.Line)
     .lineWidth(1)
     .antialias(false);
 
-//layout.node.add(pv.Dot)
-//    .fillStyle(function(n) n.firstChild ? "#aec7e8" : "#ff7f0e");
+layout.node.add(pv.Dot)
+    .fillStyle(function(n) n.firstChild ? "#aec7e8" : "#ff7f0e");
 
 layout.label.add(pv.Label);
 

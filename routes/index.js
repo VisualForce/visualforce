@@ -33,4 +33,8 @@ router.post('/upload/graph',function(req,res){
     });
 });
 
+router.get('/hierarchy', function(req, res, next){
+  res.render('hierarchy');
+});
+
 module.exports = router;
