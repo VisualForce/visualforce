@@ -17,7 +17,11 @@ var upload = multer({
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
-  res.render('index');
+  res.render('home');
+});
+
+router.get('/bar', function(req, res, next) {
+  res.render('bar');
 });
 
 router.get('/graph', function(req, res, next){
