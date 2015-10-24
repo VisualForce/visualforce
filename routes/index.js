@@ -49,4 +49,8 @@ router.get('/hierarchy', function(req, res, next){
   res.render('hierarchy');
 });
 
+router.get('/inchlib', function(req, res, next){
+  res.render('inchlib');
+});
+
 module.exports = router;
