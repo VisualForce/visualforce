@@ -28,6 +28,14 @@ router.get('/graph', function(req, res, next){
   res.render('graph');
 });
 
+router.get('/heatmap', function(req, res, next){
+  res.render('heatmap');
+})
+
+router.get('/dendrogram', function(req, res, next){
+  res.render('dendrogram');
+})
+
 router.post('/upload/graph',function(req,res){
     upload(req,res,function(err) {
         if(err) {

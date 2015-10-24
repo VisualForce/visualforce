@@ -1,0 +1,232 @@
+<!doctype html>
+<html><head>
+<style>
+.node circle {           
+   fill: #fff;           
+   stroke: steelblue;           
+   stroke-width: 1.5px;   
+}   
+.node {           
+   font: 20px sans-serif;   
+}   
+.link {           
+   fill: none;           
+   stroke: #ccc;          
+   stroke-width: 1.5px;   
+}   
+line {           
+   stroke: black;   
+}
+</style>
+<script type="text/javascript" src="http://d3js.org/d3.v3.min.js"></script>
+</head>
+<body>
+<script type="text/javascript">
+var totalWidth = 1200;   
+var width = 600;
+var height = 250;  
+var cluster = d3.layout.cluster()           
+   .size([height, width-200]);   
+/*var diagonal = d3.svg.diagonal()           
+   .projection (function(d) { return [x(d.y), d.x];});  */ 
+var svg = d3.select("body").append("svg")           
+   .attr("width",totalWidth)           
+   .attr("height",height)           
+   .append("g")          
+   .attr("transform","translate(100,0)");   
+var xs = [];   
+var ys = []; 
+var heatmaps = [];
+function getXYfromJSONTree(node){           
+   xs.push(node.x);          
+   ys.push(node.y);           
+   if(typeof node.children != 'undefined'){                   
+      for ( j in node.children){                           
+         getXYfromJSONTree(node.children[j]);                   
+      }           
+   } //else {
+      //heatmaps.push(node.heatmap)
+   //}   
+}   
+var ymax = Number.MIN_VALUE;   
+var ymin = Number.MAX_VALUE;  
+
+var gridSize = 30,
+    h = gridSize,
+    w = gridSize,
+    rectPadding = 60;
+var colorLow = 'green', colorMed = 'yellow', colorHigh = 'red';
+
+var colorScale = d3.scale.linear()
+     .domain([-1, 0, 1])
+     .range([colorLow, colorMed, colorHigh]); 
+
+var margin = {top: 82.5, right: 80, bottom: 30, left: width},
+   hmWidht = totalWidth - margin.left - margin.right,
+   hmHeight = height - margin.top - margin.bottom;
+
+d3.json("dendrogram.json", function(error, json){           
+   getXYfromJSONTree(json);          
+   var nodes = cluster.nodes(json);           
+   var links = cluster.links(nodes); 
+   var numOfChild = 0;
+
+   nodes.forEach( function(d,i){                   
+      if(typeof xs[i] != 'undefined'){                           
+         d.x = xs[i];                   
+      }                   
+      if(typeof ys[i] != 'undefined'){                           
+         d.y = ys[i];                   
+      }           
+   });
+
+   nodes.forEach( function(d){                   
+      if(d.y > ymax)
+         ymax = d.y;
+      if(d.y < ymin)                           
+         ymin = d.y;
+      if(!d.hasOwnProperty('children')) {
+         numOfChild++;
+         d.x = numOfChild;
+         console.log(d.heatmap)
+      } 
+   });
+
+   y = d3.scale.linear().domain([1, numOfChild]).range([75,height -75]);               
+   nodes.forEach( function(d){          
+      if(!d.hasOwnProperty('children')) {
+         numOfChild++;
+         d.x = 75 + d.x*30;
+      }
+   });  
+
+      // hard code, need to change in future
+   nodes.forEach( function(d){
+      if(d.hasOwnProperty('children')) {
+         var sum = 0;                   
+         for (var i = d.children.length - 1; i >= 0; i--) {
+            sum+=d.children[i].x
+         };
+         d.x = sum/d.children.length;
+      }
+   });
+
+   // hard code, need to change in future
+   nodes.forEach( function(d){
+      if(d.hasOwnProperty('children')) {
+         var sum = 0;                   
+         for (var i = d.children.length - 1; i >= 0; i--) {
+            sum+=d.children[i].x
+         };
+         d.x = sum/d.children.length;
+      }
+   });
+
+
+   x = d3.scale.linear().domain([ymin, ymax]).range([0, width-200]);
+   xinv = d3.scale.linear().domain([ymax, ymin]).range([0, width-200]);           
+
+   var link = svg.selectAll("path.link")
+      .data(links)
+      .enter().append("path") 
+      .attr("class", "link")
+      .attr("d", elbow);  
+   var node = svg.selectAll(".node")                  
+      .data(nodes)                   
+      .enter().append("g")                   
+      .attr("class","node")                   
+      .attr("transform", function(d) {                     
+         return "translate(" + x(d.y) + "," + d.x + ")";             
+      })
+
+   var hasfound = false
+Array.prototype.extend = function (other_array) {
+    /* you should include a test to check whether other_array really is an array */
+    other_array.forEach(function(v) {this.push(v)}, this);    
+}
+   var hm;
+   nodes.forEach(function(json) {
+      if (json.hasOwnProperty('heatmap')) {
+         if (!hasfound) {
+            hasfound = true
+            console.log("That's right!")
+            console.log(json.heatmap)
+            hm = d3.select("svg")
+            .append("g")
+            .attr("class", "heatmap")
+            .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+         }
+         heatmaps.extend(json.heatmap);
+            /*.data(json.heatmap, function(d) { 
+               console.log(d);
+               return d.col + ':' + d.row; })
+            .enter().append("svg:rect")
+            .attr("x", function(d) { return d.row * w; })
+            .attr("y", function(d) { return d.col * h; })
+            .attr("width", function(d) { return w; })
+            .attr("height", function(d) { return h; })
+            .style("fill", function(d) { return colorScale(d.score); } );*/
+         }
+      });
+   console.log(heatmaps);      
+   node.append("circle")                   
+      .attr("r", 4.5);           
+   node.append("text")                   
+      .attr("dx", function(d) { return d.children ? -8 : 8; })                   
+      .attr("dy", 3)                  
+      .style("text-anchor", function(d) { return d.children ? "end" : "start"; })           
+      .text( function(d){ return d.name;});       
+   var g = d3.select("svg").append("g")            
+      .attr("transform","translate(100,40)");       
+   g.append("line")            
+      .attr("x1",x(ymin))           
+      .attr("y1",0)            
+      .attr("x2",x(ymax))            
+      .attr("y2",0);       
+   g.selectAll(".ticks")            
+      .data(x.ticks(5))           
+      .enter().append("line")            
+      .attr("class","ticks")            
+      .attr("x1", function(d) { return xinv(d); })           
+      .attr("y1", -5)            
+      .attr("x2", function(d) {return xinv(d); })            
+      .attr("y2", 5);       
+   g.selectAll(".label")            
+      .data(x.ticks(5))            
+      .enter().append("text")            
+      .attr("class","label")            
+      .text(String)            
+      .attr("x", function(d) {return xinv(d); })            
+      .attr("y", -5)           
+      .attr("text-anchor","middle");
+
+   //var heatMap = svg.selectAll(".heatmap")
+     console.log(hm);
+      console.log(heatmaps);
+     hm.selectAll(".heatmap")
+     .data(heatmaps, function(d) { return d.col + ':' + d.row; })
+  .enter().append("svg:rect")
+    .attr("x", function(d) { return d.row * w; })
+    .attr("y", function(d) { return d.col * h; })
+    .attr("width", function(d) { return w; })
+    .attr("height", function(d) { return h; })
+    .style("fill", function(d) { return colorScale(d.score); });
+   
+ /*  var hm = d3.select("svg").append("g")
+   .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+   hm.data(heatmaps[0], function(d) { return d.col + ':' + d.row; })
+   .enter().append("svg:rect")
+   .attr("x", function(d) { return d.row * w; })
+   .attr("y", function(d) { return d.col * h; })
+   .attr("width", function(d) { return w; })
+   .attr("height", function(d) { return h; })
+   .style("fill", function(d) { return colorScale(d.score); } );*/
+
+});
+function elbow(d, i) {
+   return "M" + x(d.source.y) + "," + d.source.x
+   + "V" + d.target.x + "H" + x(d.target.y);
+};
+</script>
+</body></html>
